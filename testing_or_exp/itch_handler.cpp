@@ -100,8 +100,136 @@ struct ipo_quoted_period_update {
 
 struct add_order_message {
     char message_type;
-
+    uint16_t stock_locate;
+    uint16_t tracking_number;
+    uint64_t timestamp;
+    uint64_t order_reference_number;
+    char buy_sell_indicator;
+    uint32_t shares;
+    char stock[8];
+    uint32_t price;
 };
+
+struct add_order_with_mpid_attribution_message {
+    char message_type;
+    uint16_t stock_locate;
+    uint16_t tracking_number;
+    uint64_t timestamp;
+    uint64_t order_reference_number;
+    char buy_sell_indicator;
+    uint32_t shares;
+    char stock[8];
+    uint32_t price;
+    char attribution[4];
+};
+
+struct order_executed_message {
+    char message_type;
+    uint16_t stock_locate;
+    uint16_t tracking_number;
+    uint64_t timestamp;
+    uint64_t order_reference_number;
+    uint32_t executed_shares;
+    uint64_t match_number;
+};
+
+struct order_executed_with_price_message {
+    char message_type;
+    uint16_t stock_locate;
+    uint16_t tracking_number;
+    uint64_t timestamp;
+    uint64_t order_reference_number;
+    uint32_t executed_shares;
+    uint64_t match_number;
+    char printable;
+    uint64_t execution_price;
+};
+
+struct order_cancel_message {
+    char message_type;
+    uint16_t stock_locate;
+    uint16_t tracking_number;
+    uint64_t timestamp;
+    uint64_t order_reference_number;
+    uint32_t canceled_shares;
+};
+
+struct order_delete_message {
+    char message_type;
+    uint16_t stock_locate;
+    uint16_t tracking_number;
+    uint64_t timestamp;
+    uint64_t order_reference_number;
+};
+
+struct order_replace_message {
+    char message_type;
+    uint16_t stock_locate;
+    uint16_t tracking_number;
+    uint64_t timestamp;
+    uint64_t order_reference_number;
+    uint64_t new_order_reference_number;
+    uint32_t shares;
+    uint32_t price;
+};
+
+struct non_cross_trade_message {
+    char message_type;
+    uint16_t stock_locate;
+    uint16_t tracking_number;
+    uint64_t timestamp;
+    uint64_t order_reference_number;
+    char buy_sell_indicator;
+    uint32_t shares;
+    char stock[8];
+    uint32_t price;
+    uint64_t matching_number;
+};
+
+struct cross_trade_message {
+    char message_type;
+    uint16_t stock_locate;
+    uint16_t tracking_number;
+    uint64_t timestamp;
+    uint32_t shares;
+    char stock[8];
+    uint32_t cross_price;
+    uint64_t matching_number;
+    char cross_type;
+};
+
+struct broken_trade_message {
+    char message_type;
+    uint16_t stock_locate;
+    uint16_t tracking_number;
+    uint64_t timestamp;
+    uint64_t matching_number;
+};
+
+struct noii_message {
+    char message_type;
+    uint16_t stock_locate;
+    uint16_t tracking_number;
+    uint64_t timestamp;
+    uint64_t paired_shares;
+    uint64_t imbalance_shares;
+    char imbalance_direction;
+    char stock[8];
+    uint32_t far_price;
+    uint32_t near_price;
+    uint32_t current_reference_price;
+    char cross_type;
+    char price_variation_indicator;
+};
+
+struct rpii_message {
+    char message_type;
+    uint16_t stock_locate;
+    uint16_t tracking_number;
+    uint64_t timestamp;
+    char stock[8];
+    char interest_flag;
+}
 
 void process_itch_messages(std::vector<char> &buffer)
 {
