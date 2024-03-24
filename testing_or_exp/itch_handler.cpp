@@ -229,7 +229,7 @@ struct rpii_message {
     uint64_t timestamp;
     char stock[8];
     char interest_flag;
-}
+};
 
 void process_itch_messages(std::vector<char> &buffer)
 {
