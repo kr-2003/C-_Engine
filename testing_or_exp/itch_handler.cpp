@@ -251,43 +251,43 @@ struct rpii_message
 
 size_t read_big_endian(const void *buffer, uint16_t &value)
 {
-    ((uint8_t *)&value)[0] = ((const uint8_t *)buffer)[1];
-    ((uint8_t *)&value)[1] = ((const uint8_t *)buffer)[0];
+    ((uint8_t *)&value)[0] = ((const uint8_t *)buffer)[0];
+    ((uint8_t *)&value)[1] = ((const uint8_t *)buffer)[1];
     return 2;
 }
 
 size_t read_big_endian(const void *buffer, uint32_t &value)
 {
-    ((uint8_t*)&value)[0] = ((const uint8_t*)buffer)[3];
-    ((uint8_t*)&value)[1] = ((const uint8_t*)buffer)[2];
-    ((uint8_t*)&value)[2] = ((const uint8_t*)buffer)[1];
-    ((uint8_t*)&value)[3] = ((const uint8_t*)buffer)[0];
+    ((uint8_t*)&value)[0] = ((const uint8_t*)buffer)[0];
+    ((uint8_t*)&value)[1] = ((const uint8_t*)buffer)[1];
+    ((uint8_t*)&value)[2] = ((const uint8_t*)buffer)[2];
+    ((uint8_t*)&value)[3] = ((const uint8_t*)buffer)[3];
     return 4;
 }
 
 size_t read_big_endian(const void *buffer, uint64_t &value)
 {
-    ((uint8_t*)&value)[0] = ((const uint8_t*)buffer)[7];
-    ((uint8_t*)&value)[1] = ((const uint8_t*)buffer)[6];
-    ((uint8_t*)&value)[2] = ((const uint8_t*)buffer)[5];
-    ((uint8_t*)&value)[3] = ((const uint8_t*)buffer)[4];
-    ((uint8_t*)&value)[4] = ((const uint8_t*)buffer)[3];
-    ((uint8_t*)&value)[5] = ((const uint8_t*)buffer)[2];
-    ((uint8_t*)&value)[6] = ((const uint8_t*)buffer)[1];
-    ((uint8_t*)&value)[7] = ((const uint8_t*)buffer)[0];
+    ((uint8_t*)&value)[0] = ((const uint8_t*)buffer)[0];
+    ((uint8_t*)&value)[1] = ((const uint8_t*)buffer)[1];
+    ((uint8_t*)&value)[2] = ((const uint8_t*)buffer)[2];
+    ((uint8_t*)&value)[3] = ((const uint8_t*)buffer)[3];
+    ((uint8_t*)&value)[4] = ((const uint8_t*)buffer)[4];
+    ((uint8_t*)&value)[5] = ((const uint8_t*)buffer)[5];
+    ((uint8_t*)&value)[6] = ((const uint8_t*)buffer)[6];
+    ((uint8_t*)&value)[7] = ((const uint8_t*)buffer)[7];
     return 8;
 }
 
 size_t read_timestamp(const void *buffer, uint64_t &value)
 {
-    ((uint8_t*)&value)[0] = ((const uint8_t*)buffer)[2];
-    ((uint8_t*)&value)[1] = ((const uint8_t*)buffer)[1];
-    ((uint8_t*)&value)[2] = ((const uint8_t*)buffer)[0];
+    ((uint8_t*)&value)[0] = 0;
+    ((uint8_t*)&value)[1] = 0;
+    ((uint8_t*)&value)[2] = 0;
     ((uint8_t*)&value)[3] = 0;
     ((uint8_t*)&value)[4] = 0;
-    ((uint8_t*)&value)[5] = 0;
-    ((uint8_t*)&value)[6] = 0;
-    ((uint8_t*)&value)[7] = 0;
+    ((uint8_t*)&value)[5] = ((const uint8_t*)buffer)[0];
+    ((uint8_t*)&value)[6] = ((const uint8_t*)buffer)[1];
+    ((uint8_t*)&value)[7] = ((const uint8_t*)buffer)[2];
     return 6;
 }
 
