@@ -315,6 +315,23 @@ struct rpii_message
     char interest_flag;
 };
 
+struct luld_auction_collar_message 
+{
+    char message_type;
+    uint16_t stock_locate;
+    uint16_t tracking_number;
+    uint64_t timestamp;
+    char stock[9];
+    uint32_t auction_collar_reference_price;
+    uint32_t upper_auction_collar_price;
+    uint32_t lower_auction_collar_price;
+    uint32_t auction_collar_extension;
+};
+
+struct unknown_message {
+    char message_type;
+};
+
 size_t read_big_endian(const void *buffer, uint16_t &value)
 {
     ((uint8_t *)&value)[0] = ((const uint8_t *)buffer)[1];
@@ -360,7 +377,7 @@ size_t read_timestamp(const void *buffer, uint64_t &value)
 template <size_t N>
 size_t read_string(const void *buffer, char (&str)[N])
 {
-    std::cout << N << std::endl;
+    // std::cout << N << std::endl;
     std::memcpy(str, buffer, N - 1); 
     str[N - 1] = '\0';  
     return N - 1;  
@@ -380,11 +397,11 @@ bool process_system_event_message(void *buffer, size_t size)
     data += read_big_endian(data, message.tracking_number);
     data += read_timestamp(data, message.timestamp);
     message.event_code = *data++;
-    std::cout << "Message type: " << message.message_type << std::endl;
-    std::cout << "stock locate: " << message.stock_locate << std::endl;
-    std::cout << "tracking_number: " << message.tracking_number << std::endl;
-    std::cout << "timestamp: " << message.timestamp << std::endl;
-    std::cout << "event_code: " << message.event_code << std::endl;
+    // std::cout << "Message type: " << message.message_type << std::endl;
+    // std::cout << "stock locate: " << message.stock_locate << std::endl;
+    // std::cout << "tracking_number: " << message.tracking_number << std::endl;
+    // std::cout << "timestamp: " << message.timestamp << std::endl;
+    // std::cout << "event_code: " << message.event_code << std::endl;
     // exit(0);
     return true;
 }
@@ -508,6 +525,286 @@ bool process_mwcb_breach_message(const void* buffer, size_t size) {
     message.breached_level = *data++;
     return true;
 }
+
+bool process_ipo_quoting_period_update_message(const void* buffer, size_t size) {
+    assert((size == 28) && "Invalid size of ipo quoting period update msg");
+    if(size != 28) 
+    {
+        return false;
+    }
+    uint8_t *data = (uint8_t *)buffer;
+    ipo_quoted_period_update message;
+    message.message_type = *data++;
+    data += read_big_endian(data, message.stock_locate);
+    data += read_big_endian(data, message.tracking_number);
+    data += read_timestamp(data, message.timestamp);
+    data += read_string(data, message.stock);
+    data += read_big_endian(data, message.ipo_quotation_release_time);
+    message.ipo_quotation_release_qualifier = *data++;
+    data += read_big_endian(data, message.ipo_price);
+    return true;
+}
+
+bool process_add_order_message(const void* buffer, size_t size) {
+    assert((size == 36) && "Invalid size of add order message");
+    if(size != 36) 
+    {
+        return false;
+    }
+    uint8_t *data = (uint8_t *)buffer;
+    add_order_message message;
+    message.message_type = *data++;
+    data += read_big_endian(data, message.stock_locate);
+    data += read_big_endian(data, message.tracking_number);
+    data += read_timestamp(data, message.timestamp);
+    data += read_big_endian(data, message.order_reference_number);
+    message.buy_sell_indicator = *data++;
+    data += read_big_endian(data, message.shares);
+    data += read_string(data, message.stock);
+    data += read_big_endian(data, message.price);
+    return true;
+}
+
+bool process_add_order_mpid_attribution_message(const void* buffer, size_t size) {
+    assert((size == 40) && "invalid size of add order mpid message");
+    if(size != 40)
+    {
+        return false;
+    }
+    uint8_t *data = (uint8_t *)buffer;
+    add_order_with_mpid_attribution_message message;
+    message.message_type = *data++;
+    data += read_big_endian(data, message.stock_locate);
+    data += read_big_endian(data, message.tracking_number);
+    data += read_timestamp(data, message.timestamp);
+    data += read_big_endian(data, message.order_reference_number);
+    message.buy_sell_indicator = *data++;
+    data += read_big_endian(data, message.shares);
+    data += read_string(data, message.stock);
+    data += read_big_endian(data, message.price);
+    data += read_string(data, message.attribution);
+    return true;
+} 
+
+bool process_order_executed_message(const void *buffer, size_t size) {
+    assert((size == 31) && "invalid size of order executed message");
+    if(size != 31) 
+    {
+        return false;
+    }
+    uint8_t *data = (uint8_t *)buffer;
+    order_executed_message message;
+    message.message_type = *data++;
+    data += read_big_endian(data, message.stock_locate);
+    data += read_big_endian(data, message.tracking_number);
+    data += read_timestamp(data, message.timestamp);
+    data += read_big_endian(data, message.order_reference_number);
+    data += read_big_endian(data, message.executed_shares);
+    data += read_big_endian(data, message.match_number);
+    return true;
+}
+
+bool process_order_executed_with_price_message(const void* buffer, size_t size) {
+    assert((size == 36) && "invalid size of order ex message");
+    if(size != 36)
+    {
+        return false;
+    }
+    uint8_t *data = (uint8_t *)buffer;
+    order_executed_with_price_message message;
+    message.message_type = *data++;
+    data += read_big_endian(data, message.stock_locate);
+    data += read_big_endian(data, message.tracking_number);
+    data += read_timestamp(data, message.timestamp);
+    data += read_big_endian(data, message.order_reference_number);
+    data += read_big_endian(data, message.executed_shares);
+    data += read_big_endian(data, message.match_number);
+    message.printable = *data++;
+    data += read_big_endian(data, message.execution_price);
+    return true;
+}
+
+bool process_order_cancel_message(const void* buffer, size_t size) {
+    assert((size == 23) && "invalid order cancel msg");
+    if(size != 23)
+    {
+        return false;
+    }
+    uint8_t *data = (uint8_t *)buffer;
+    order_cancel_message message;
+    message.message_type = *data++;
+    data += read_big_endian(data, message.stock_locate);
+    data += read_big_endian(data, message.tracking_number);
+    data += read_timestamp(data, message.timestamp);
+    data += read_big_endian(data, message.order_reference_number);
+    data += read_big_endian(data, message.canceled_shares);
+    return true;
+}
+
+bool process_order_delete_message(const void* buffer, size_t size) {
+    assert((size == 19) && "invalid order delete msg");
+    if(size != 19)
+    {
+        return false;
+    }
+    uint8_t *data = (uint8_t *)buffer;
+    order_delete_message message;
+    message.message_type = *data++;
+    data += read_big_endian(data, message.stock_locate);
+    data += read_big_endian(data, message.tracking_number);
+    data += read_timestamp(data, message.timestamp);
+    data += read_big_endian(data, message.order_reference_number);
+    return true;
+}
+
+bool process_order_replace_message(const void* buffer, size_t size) {
+    assert((size == 35) && "invalid order replace msg");
+    if(size != 35)
+    {
+        return false;
+    }
+    uint8_t *data = (uint8_t *)buffer;
+    order_replace_message message;
+    message.message_type = *data++;
+    data += read_big_endian(data, message.stock_locate);
+    data += read_big_endian(data, message.tracking_number);
+    data += read_timestamp(data, message.timestamp);
+    data += read_big_endian(data, message.order_reference_number);
+    data += read_big_endian(data, message.new_order_reference_number);
+    data += read_big_endian(data, message.shares);
+    data += read_big_endian(data, message.price);
+    return true;
+}
+
+bool process_non_cross_trade_message(const void* buffer, size_t size) {
+    assert((size == 44) && "invalid non cross trade msg");
+    if(size != 44)
+    {
+        return false;
+    }
+    uint8_t *data = (uint8_t *)buffer;
+    non_cross_trade_message message;
+    message.message_type = *data++;
+    data += read_big_endian(data, message.stock_locate);
+    data += read_big_endian(data, message.tracking_number);
+    data += read_timestamp(data, message.timestamp);
+    data += read_big_endian(data, message.order_reference_number);
+    message.buy_sell_indicator = *data++;
+    data += read_big_endian(data, message.shares);
+    data += read_string(data, message.stock);
+    data += read_big_endian(data, message.price);
+    data += read_big_endian(data, message.matching_number);
+    return true;
+}
+
+bool process_cross_trade_message(const void* buffer, size_t size) {
+    assert((size == 40) && "invalid cross trade message");
+    if(size != 40)
+    {
+        return false;
+    }
+    uint8_t *data = (uint8_t *)buffer;
+    cross_trade_message message;
+    message.message_type = *data++;
+    data += read_big_endian(data, message.stock_locate);
+    data += read_big_endian(data, message.tracking_number);
+    data += read_timestamp(data, message.timestamp);
+    data += read_big_endian(data, message.shares);
+    data += read_string(data, message.stock);
+    data += read_big_endian(data, message.cross_price);
+    data += read_big_endian(data, message.matching_number);
+    message.cross_type = *data++;
+    return true;
+}
+
+bool process_broken_trade_message(const void* buffer, size_t size) {
+    assert((size == 19) && "invalid broken trade message");
+    if(size != 19)
+    {
+        return false;
+    }
+    uint8_t *data = (uint8_t *)buffer;
+    broken_trade_message message;
+    message.message_type = *data++;
+    data += read_big_endian(data, message.stock_locate);
+    data += read_big_endian(data, message.tracking_number);
+    data += read_timestamp(data, message.timestamp);
+    data += read_big_endian(data, message.matching_number);
+    return true;
+}
+
+bool process_noii_message(const void* buffer, size_t size) {
+    assert((size == 50) && "invalid noii message");
+    if(size != 50)
+    {
+        return false;
+    }
+    uint8_t *data = (uint8_t *)buffer;
+    noii_message message;
+    message.message_type = *data++;
+    data += read_big_endian(data, message.stock_locate);
+    data += read_big_endian(data, message.tracking_number);
+    data += read_timestamp(data, message.timestamp);
+    data += read_timestamp(data, message.paired_shares);
+    data += read_timestamp(data, message.imbalance_shares);
+    message.imbalance_direction = *data++;
+    data += read_string(data, message.stock);
+    data += read_big_endian(data, message.far_price);
+    data += read_big_endian(data, message.near_price);
+    data += read_big_endian(data, message.current_reference_price);
+    message.cross_type = *data++;
+    message.price_variation_indicator = *data++;
+    return true;
+}
+
+bool process_rpii_message(const void* buffer, size_t size) {
+    assert((size == 20) && "invalid rpii message");
+    if(size != 20)
+    {
+        return false;
+    }
+    uint8_t *data = (uint8_t *)buffer;
+    rpii_message message;
+    message.message_type = *data++;
+    data += read_big_endian(data, message.stock_locate);
+    data += read_big_endian(data, message.tracking_number);
+    data += read_timestamp(data, message.timestamp);
+    data += read_string(data, message.stock);
+    message.interest_flag = *data++;
+    return true;
+}
+
+bool process_luld_auction_collar_message(void* buffer, size_t size) {
+    assert((size == 35) && "invalid luld auction collar msg");
+    if(size != 35)
+    {
+        return false;
+    }
+    uint8_t *data = (uint8_t *)buffer;
+    luld_auction_collar_message message;
+    message.message_type = *data++;
+    data += read_big_endian(data, message.stock_locate);
+    data += read_big_endian(data, message.tracking_number);
+    data += read_timestamp(data, message.timestamp);
+    data += read_string(data, message.stock);
+    data += read_big_endian(data, message.auction_collar_reference_price);
+    data += read_big_endian(data, message.upper_auction_collar_price);
+    data += read_big_endian(data, message.lower_auction_collar_price);
+    data += read_big_endian(data, message.auction_collar_extension);
+    return true;
+}
+
+bool process_unknown_message(const void* buffer, size_t size) {
+    assert((size > 0) && "Invalid size of the unknown ITCH message!");
+    if (size == 0)
+    {
+        return false;
+    }
+    uint8_t *data = (uint8_t *)buffer;
+    unknown_message message;
+    message.message_type = *data;
+    return true;
+}
 bool process_message(void *buffer, size_t size)
 {
     if (size == 0)
@@ -519,91 +816,70 @@ bool process_message(void *buffer, size_t size)
     {
     case 'S':
         return process_system_event_message(data, size);
-        break;
     case 'R':
         // std::cout << "ProcessStockDirectoryMessage(data, size)" << std::endl;
         return process_stock_directory_message(data, size);
-        break;
     case 'H':
         // std::cout << "ProcessStockTradingActionMessage(data, size)" << std::endl;
         return process_stock_trading_action_message(data, size);
-        break;
     case 'Y':
         // std::cout << "ProcessRegSHOMessage(data, size)" << std::endl;
         return process_reg_sho_restriction_message(data, size);
-        break;
     case 'L':
         // std::cout << "ProcessMarketParticipantPositionMessage(data, size)" << std::endl;
         return process_market_participant_position_message(data, size);
-        break;
     case 'V':
         // std::cout << "ProcessMWCBDeclineMessage(data, size)" << std::endl;
         return process_mwcb_decline_level_message(data, size);
-        break;
     case 'W':
         // std::cout << "ProcessMWCBStatusMessage(data, size)" << std::endl;
         return process_mwcb_breach_message(data, size);
-        break;
     case 'K':
         // std::cout << "ProcessIPOQuotingMessage(data, size)" << std::endl;
-        return true;
-        break;
+
+        return process_ipo_quoting_period_update_message(data, size);
     case 'A':
         // std::cout << "ProcessAddOrderMessage(data, size)" << std::endl;
-        return true;
-        break;
+        return process_add_order_message(data, size);
     case 'F':
         // std::cout << "ProcessAddOrderMPIDMessage(data, size)" << std::endl;
-        return true;
-        break;
+        return process_add_order_mpid_attribution_message(data, size);
     case 'E':
         // std::cout << "ProcessOrderExecutedMessage(data, size)" << std::endl;
-        return true;
-        break;
+        return process_order_executed_message(data, size);
     case 'C':
         // std::cout << "ProcessOrderExecutedWithPriceMessage(data, size)" << std::endl;
-        return true;
-        break;
+        return process_order_executed_with_price_message(data, size);
     case 'X':
         // std::cout << "ProcessOrderCancelMessage(data, size)" << std::endl;
-        return true;
-        break;
+        return process_order_cancel_message(data, size);
     case 'D':
         // std::cout << "ProcessOrderDeleteMessage(data, size)" << std::endl;
-        return true;
-        break;
+        return process_order_delete_message(data, size);
     case 'U':
         // std::cout << "ProcessOrderReplaceMessage(data, size)" << std::endl;
-        return true;
-        break;
+        return process_order_replace_message(data, size);
     case 'P':
         // std::cout << "ProcessTradeMessage(data, size)" << std::endl;
-        return true;
-        break;
+        return process_non_cross_trade_message(data, size);
     case 'Q':
         // std::cout << "ProcessCrossTradeMessage(data, size)" << std::endl;
-        return true;
-        break;
+        return process_cross_trade_message(data, size);
     case 'B':
         // std::cout << "ProcessBrokenTradeMessage(data, size)" << std::endl;
-        return true;
-        break;
+        return process_broken_trade_message(data, size);
     case 'I':
         // std::cout << "ProcessNOIIMessage(data, size)" << std::endl;
-        return true;
-        break;
+        return process_noii_message(data, size);
     case 'N':
         // std::cout << "ProcessRPIIMessage(data, size)" << std::endl;
-        return true;
-        break;
+        return process_rpii_message(data, size);
     case 'J':
         // std::cout << "ProcessLULDAuctionCollarMessage(data, size)" << std::endl;
-        return true;
-        break;
+        return process_luld_auction_collar_message(data, size);
     default:
         // std::cout << "ProcessUnknownMessage(data, size);" << std::endl;
-        return true;
-        break;
+        return process_unknown_message(data, size);
     }
 }
 
@@ -661,9 +937,9 @@ int main()
         return 1;
     }
     file.close();
-    std::cout << file_size << std::endl;
+    // std::cout << file_size << std::endl;
     uint8_t *data = (uint8_t *)buffer;
-    std::cout << (*data) << std::endl;
+    // std::cout << (*data) << std::endl;
     process(buffer, file_size);
 
     // Don't forget to free the allocated memory
