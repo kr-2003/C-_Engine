@@ -1,6 +1,12 @@
 #include <iostream>
 #include <fstream>
 #include <cassert>
+#include <sys/time.h>
+
+size_t messages = 0;
+size_t _size;
+std::vector<uint8_t> _cache;
+
 struct ITCHMessage
 {
     char messageType;
@@ -105,7 +111,6 @@ struct reg_sho_restriction_message
         os << "timestamp: " << msg.timestamp << std::endl;
         os << "stock: " << msg.stock << std::endl;
         os << "reg sho action: " << msg.reg_sho_action << std::endl;
-
         return os;
     }
 };
@@ -121,7 +126,7 @@ struct market_participant_position_message
     char primary_market_manager;
     char market_maker_mode;
     char market_participant_state;
-    
+
     friend std::ostream &operator<<(std::ostream &os, const market_participant_position_message &msg)
     {
         os << "message_type: " << msg.message_type << std::endl;
@@ -133,7 +138,6 @@ struct market_participant_position_message
         os << "primary_market_manager: " << msg.primary_market_manager << std::endl;
         os << "market_manager_mode: " << msg.market_maker_mode << std::endl;
         os << "market_participant_state: " << msg.market_participant_state << std::endl;
-
         return os;
     }
 };
@@ -315,7 +319,7 @@ struct rpii_message
     char interest_flag;
 };
 
-struct luld_auction_collar_message 
+struct luld_auction_collar_message
 {
     char message_type;
     uint16_t stock_locate;
@@ -328,7 +332,8 @@ struct luld_auction_collar_message
     uint32_t auction_collar_extension;
 };
 
-struct unknown_message {
+struct unknown_message
+{
     char message_type;
 };
 
@@ -378,9 +383,9 @@ template <size_t N>
 size_t read_string(const void *buffer, char (&str)[N])
 {
     // std::cout << N << std::endl;
-    std::memcpy(str, buffer, N - 1); 
-    str[N - 1] = '\0';  
-    return N - 1;  
+    std::memcpy(str, buffer, N - 1);
+    str[N - 1] = '\0';
+    return N - 1;
 }
 
 bool process_system_event_message(void *buffer, size_t size)
@@ -403,6 +408,7 @@ bool process_system_event_message(void *buffer, size_t size)
     // std::cout << "timestamp: " << message.timestamp << std::endl;
     // std::cout << "event_code: " << message.event_code << std::endl;
     // exit(0);
+    messages++;
     return true;
 }
 
@@ -433,10 +439,12 @@ bool process_stock_directory_message(void *buffer, size_t size)
     message.etp_flag = *data++;
     data += read_big_endian(data, message.etp_leverage_factor);
     message.inverse_indicator = *data++;
+    messages++;
     return true;
 }
 
-bool process_stock_trading_action_message(void* buffer, size_t size) {
+bool process_stock_trading_action_message(void *buffer, size_t size)
+{
     assert((size == 25) && "Invalid size of Stock Trading Action Message!");
     if (size != 25)
     {
@@ -452,10 +460,12 @@ bool process_stock_trading_action_message(void* buffer, size_t size) {
     message.trading_state = *data++;
     message.reserved = *data++;
     data += read_string(data, message.reason);
+    messages++;
     return true;
 }
 
-bool process_reg_sho_restriction_message(void* buffer, size_t size) {
+bool process_reg_sho_restriction_message(void *buffer, size_t size)
+{
     assert((size == 20) && "Invalid size of Reg Sho Restriction Message!");
     if (size != 20)
     {
@@ -469,10 +479,12 @@ bool process_reg_sho_restriction_message(void* buffer, size_t size) {
     data += read_timestamp(data, message.timestamp);
     data += read_string(data, message.stock);
     message.reg_sho_action = *data++;
+    messages++;
     return true;
 }
 
-bool process_market_participant_position_message(void* buffer, size_t size) {
+bool process_market_participant_position_message(void *buffer, size_t size)
+{
     assert((size == 26) && "Invalid size of Market Participant Position Message!");
     if (size != 26)
     {
@@ -489,10 +501,12 @@ bool process_market_participant_position_message(void* buffer, size_t size) {
     message.primary_market_manager = *data++;
     message.market_maker_mode = *data++;
     message.market_participant_state = *data++;
+    messages++;
     return true;
 }
 
-bool process_mwcb_decline_level_message(const void* buffer, size_t size) {
+bool process_mwcb_decline_level_message(const void *buffer, size_t size)
+{
     assert((size == 35) && "Invalid size of mwcb Message!");
     if (size != 35)
     {
@@ -507,10 +521,12 @@ bool process_mwcb_decline_level_message(const void* buffer, size_t size) {
     data += read_big_endian(data, message.level_1);
     data += read_big_endian(data, message.level_2);
     data += read_big_endian(data, message.level_3);
+    messages++;
     return true;
 }
 
-bool process_mwcb_breach_message(const void* buffer, size_t size) {
+bool process_mwcb_breach_message(const void *buffer, size_t size)
+{
     assert((size == 12) && "Invalid size of mwcb breach Message!");
     if (size != 12)
     {
@@ -523,12 +539,14 @@ bool process_mwcb_breach_message(const void* buffer, size_t size) {
     data += read_big_endian(data, message.tracking_number);
     data += read_timestamp(data, message.timestamp);
     message.breached_level = *data++;
+    messages++;
     return true;
 }
 
-bool process_ipo_quoting_period_update_message(const void* buffer, size_t size) {
+bool process_ipo_quoting_period_update_message(const void *buffer, size_t size)
+{
     assert((size == 28) && "Invalid size of ipo quoting period update msg");
-    if(size != 28) 
+    if (size != 28)
     {
         return false;
     }
@@ -542,12 +560,14 @@ bool process_ipo_quoting_period_update_message(const void* buffer, size_t size) 
     data += read_big_endian(data, message.ipo_quotation_release_time);
     message.ipo_quotation_release_qualifier = *data++;
     data += read_big_endian(data, message.ipo_price);
+    messages++;
     return true;
 }
 
-bool process_add_order_message(const void* buffer, size_t size) {
+bool process_add_order_message(const void *buffer, size_t size)
+{
     assert((size == 36) && "Invalid size of add order message");
-    if(size != 36) 
+    if (size != 36)
     {
         return false;
     }
@@ -562,12 +582,14 @@ bool process_add_order_message(const void* buffer, size_t size) {
     data += read_big_endian(data, message.shares);
     data += read_string(data, message.stock);
     data += read_big_endian(data, message.price);
+    messages++;
     return true;
 }
 
-bool process_add_order_mpid_attribution_message(const void* buffer, size_t size) {
+bool process_add_order_mpid_attribution_message(const void *buffer, size_t size)
+{
     assert((size == 40) && "invalid size of add order mpid message");
-    if(size != 40)
+    if (size != 40)
     {
         return false;
     }
@@ -583,12 +605,14 @@ bool process_add_order_mpid_attribution_message(const void* buffer, size_t size)
     data += read_string(data, message.stock);
     data += read_big_endian(data, message.price);
     data += read_string(data, message.attribution);
+    messages++;
     return true;
-} 
+}
 
-bool process_order_executed_message(const void *buffer, size_t size) {
+bool process_order_executed_message(const void *buffer, size_t size)
+{
     assert((size == 31) && "invalid size of order executed message");
-    if(size != 31) 
+    if (size != 31)
     {
         return false;
     }
@@ -601,12 +625,14 @@ bool process_order_executed_message(const void *buffer, size_t size) {
     data += read_big_endian(data, message.order_reference_number);
     data += read_big_endian(data, message.executed_shares);
     data += read_big_endian(data, message.match_number);
+    messages++;
     return true;
 }
 
-bool process_order_executed_with_price_message(const void* buffer, size_t size) {
+bool process_order_executed_with_price_message(const void *buffer, size_t size)
+{
     assert((size == 36) && "invalid size of order ex message");
-    if(size != 36)
+    if (size != 36)
     {
         return false;
     }
@@ -621,12 +647,14 @@ bool process_order_executed_with_price_message(const void* buffer, size_t size) 
     data += read_big_endian(data, message.match_number);
     message.printable = *data++;
     data += read_big_endian(data, message.execution_price);
+    messages++;
     return true;
 }
 
-bool process_order_cancel_message(const void* buffer, size_t size) {
+bool process_order_cancel_message(const void *buffer, size_t size)
+{
     assert((size == 23) && "invalid order cancel msg");
-    if(size != 23)
+    if (size != 23)
     {
         return false;
     }
@@ -638,12 +666,14 @@ bool process_order_cancel_message(const void* buffer, size_t size) {
     data += read_timestamp(data, message.timestamp);
     data += read_big_endian(data, message.order_reference_number);
     data += read_big_endian(data, message.canceled_shares);
+    messages++;
     return true;
 }
 
-bool process_order_delete_message(const void* buffer, size_t size) {
+bool process_order_delete_message(const void *buffer, size_t size)
+{
     assert((size == 19) && "invalid order delete msg");
-    if(size != 19)
+    if (size != 19)
     {
         return false;
     }
@@ -654,12 +684,14 @@ bool process_order_delete_message(const void* buffer, size_t size) {
     data += read_big_endian(data, message.tracking_number);
     data += read_timestamp(data, message.timestamp);
     data += read_big_endian(data, message.order_reference_number);
+    messages++;
     return true;
 }
 
-bool process_order_replace_message(const void* buffer, size_t size) {
+bool process_order_replace_message(const void *buffer, size_t size)
+{
     assert((size == 35) && "invalid order replace msg");
-    if(size != 35)
+    if (size != 35)
     {
         return false;
     }
@@ -673,12 +705,14 @@ bool process_order_replace_message(const void* buffer, size_t size) {
     data += read_big_endian(data, message.new_order_reference_number);
     data += read_big_endian(data, message.shares);
     data += read_big_endian(data, message.price);
+    messages++;
     return true;
 }
 
-bool process_non_cross_trade_message(const void* buffer, size_t size) {
+bool process_non_cross_trade_message(const void *buffer, size_t size)
+{
     assert((size == 44) && "invalid non cross trade msg");
-    if(size != 44)
+    if (size != 44)
     {
         return false;
     }
@@ -694,12 +728,14 @@ bool process_non_cross_trade_message(const void* buffer, size_t size) {
     data += read_string(data, message.stock);
     data += read_big_endian(data, message.price);
     data += read_big_endian(data, message.matching_number);
+    messages++;
     return true;
 }
 
-bool process_cross_trade_message(const void* buffer, size_t size) {
+bool process_cross_trade_message(const void *buffer, size_t size)
+{
     assert((size == 40) && "invalid cross trade message");
-    if(size != 40)
+    if (size != 40)
     {
         return false;
     }
@@ -714,12 +750,14 @@ bool process_cross_trade_message(const void* buffer, size_t size) {
     data += read_big_endian(data, message.cross_price);
     data += read_big_endian(data, message.matching_number);
     message.cross_type = *data++;
+    messages++;
     return true;
 }
 
-bool process_broken_trade_message(const void* buffer, size_t size) {
+bool process_broken_trade_message(const void *buffer, size_t size)
+{
     assert((size == 19) && "invalid broken trade message");
-    if(size != 19)
+    if (size != 19)
     {
         return false;
     }
@@ -730,12 +768,14 @@ bool process_broken_trade_message(const void* buffer, size_t size) {
     data += read_big_endian(data, message.tracking_number);
     data += read_timestamp(data, message.timestamp);
     data += read_big_endian(data, message.matching_number);
+    messages++;
     return true;
 }
 
-bool process_noii_message(const void* buffer, size_t size) {
+bool process_noii_message(const void *buffer, size_t size)
+{
     assert((size == 50) && "invalid noii message");
-    if(size != 50)
+    if (size != 50)
     {
         return false;
     }
@@ -754,12 +794,14 @@ bool process_noii_message(const void* buffer, size_t size) {
     data += read_big_endian(data, message.current_reference_price);
     message.cross_type = *data++;
     message.price_variation_indicator = *data++;
+    messages++;
     return true;
 }
 
-bool process_rpii_message(const void* buffer, size_t size) {
+bool process_rpii_message(const void *buffer, size_t size)
+{
     assert((size == 20) && "invalid rpii message");
-    if(size != 20)
+    if (size != 20)
     {
         return false;
     }
@@ -771,12 +813,14 @@ bool process_rpii_message(const void* buffer, size_t size) {
     data += read_timestamp(data, message.timestamp);
     data += read_string(data, message.stock);
     message.interest_flag = *data++;
+    messages++;
     return true;
 }
 
-bool process_luld_auction_collar_message(void* buffer, size_t size) {
+bool process_luld_auction_collar_message(void *buffer, size_t size)
+{
     assert((size == 35) && "invalid luld auction collar msg");
-    if(size != 35)
+    if (size != 35)
     {
         return false;
     }
@@ -791,10 +835,12 @@ bool process_luld_auction_collar_message(void* buffer, size_t size) {
     data += read_big_endian(data, message.upper_auction_collar_price);
     data += read_big_endian(data, message.lower_auction_collar_price);
     data += read_big_endian(data, message.auction_collar_extension);
+    messages++;
     return true;
 }
 
-bool process_unknown_message(const void* buffer, size_t size) {
+bool process_unknown_message(const void *buffer, size_t size)
+{
     assert((size > 0) && "Invalid size of the unknown ITCH message!");
     if (size == 0)
     {
@@ -890,25 +936,89 @@ bool process(void *buffer, size_t size)
 
     while (index < size)
     {
-        // Read message size
+        // std::cout << index << std::endl;
+        if (_size == 0)
+        {
+            size_t remaining = size - index;
+            if (((_cache.size() == 0) && (remaining < 3)) || (_cache.size() == 1))
+            {
+                _cache.push_back(data[index++]);
+                continue;
+            }
+            uint16_t message_size;
+            if (_cache.empty())
+            {
+                index += read_big_endian(&data[index], message_size);
+            }
+            else
+            {
+                read_big_endian(_cache.data(), message_size);
+                _cache.clear();
+            }
+            _size = message_size;
+        }
+        if (_size > 0)
+        {
+            size_t remaining = size - index;
+            if (!_cache.empty())
+            {
+                size_t tail = _size - _cache.size();
+                if (tail > remaining)
+                {
+                    tail = remaining;
+                }
+                _cache.insert(_cache.end(), &data[index], &data[index + tail]);
+                index += tail;
+                if (_cache.size() < _size)
+                {
+                    continue;
+                }
+            }
+            else if (_size > remaining)
+            {
+                _cache.reserve(_size);
+                _cache.insert(_cache.end(), &data[index], &data[index + remaining]);
+                index += remaining;
+                continue;
+            }
+            if (_cache.empty())
+            {
+                if (!process_message(&data[index], _size))
+                    return false;
+                index += _size;
+            }
+            else
+            {
+                if (!process_message(_cache.data(), _size))
+                    return false;
+                _cache.clear();
+            }
+            _size = 0;
+        }
+    }
+
+    return true;
+}
+
+bool process_without_cache(void *buffer, size_t size)
+{
+    size_t index = 0;
+    uint8_t *data = (uint8_t *)buffer;
+
+    while (index < size)
+    {
         uint16_t message_size;
         index += read_big_endian(&data[index], message_size);
-        // std::cout << message_size << std::endl;
-        // Check remaining buffer size
         if (index + message_size > size)
         {
-            // Incomplete message, return false
             return false;
         }
 
         // Process message
         if (!process_message(&data[index], message_size))
         {
-            // Processing failed, return false
             return false;
         }
-
-        // Move to next message
         index += message_size;
     }
 
@@ -918,7 +1028,7 @@ bool process(void *buffer, size_t size)
 int main()
 {
     std::cout << "Hello, World!" << std::endl;
-    std::ifstream file("../data/itch/sample.itch", std::ios::binary);
+    std::ifstream file("../data/itch/01302019.NASDAQ_ITCH50", std::ios::binary);
     if (!file.is_open())
     {
         std::cerr << "Failed to open file!" << std::endl;
@@ -940,7 +1050,24 @@ int main()
     // std::cout << file_size << std::endl;
     uint8_t *data = (uint8_t *)buffer;
     // std::cout << (*data) << std::endl;
+    struct timeval start, end;
+    gettimeofday(&start, NULL);
+    std::ios_base::sync_with_stdio(false);
     process(buffer, file_size);
+    gettimeofday(&end, NULL);
+
+    double time_taken;
+
+    time_taken = (end.tv_sec - start.tv_sec) * 1e6;
+    time_taken = (time_taken + (end.tv_usec -
+                                start.tv_usec)) *
+                 1e-6;
+
+    std::cout << "Time taken by program is : " << std::fixed
+              << time_taken << std::setprecision(6);
+    std::cout << " sec" << std::endl;
+
+    std::cout << "Total number of messages processed: " << messages << std::endl;
 
     // Don't forget to free the allocated memory
     free(buffer);
