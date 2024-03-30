@@ -4,7 +4,6 @@ using namespace TradingEngine::ITCH;
 
 int main()
 {
-    std::cout << "Hello, World!" << std::endl;
     std::ifstream file("../data/itch/sample.itch", std::ios::binary);
     if (!file.is_open())
     {
@@ -44,8 +43,9 @@ int main()
     std::cout << "Time taken by program is : " << std::fixed
               << time_taken << std::setprecision(6);
     std::cout << " sec" << std::endl;
-
     std::cout << "Total number of messages processed: " << itch_handler.get_total_messages() << std::endl;
+    std::cout << "Throughput: " << itch_handler.get_total_messages() / time_taken << " msgs/s" << std::endl;
+    std::cout << "Latency: " << time_taken / itch_handler.get_total_messages() * 1e9 << " ns" << std::endl;
 
     // Don't forget to free the allocated memory
     free(buffer);
