@@ -1,1 +1,5 @@
 /data
+.vscode
+/testing_or_exp/itch_handler.dSYM
+/testing_or_exp/itch_handler
+/build
