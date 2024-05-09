@@ -1,4 +1,4 @@
-# Trading Engine in C++
+# Trading Engine in C++ (in progress)
 
 ##### ITCH Handler Performance
 ```bash
